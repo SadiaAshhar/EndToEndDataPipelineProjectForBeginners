@@ -40,7 +40,7 @@ def covid_vaccine_data():
         CREATE TABLE IF NOT EXISTS covid_vaccine_data (
             id SERIAL PRIMARY KEY,
             country_name VARCHAR(100),
-            date DATE,
+            date VARCHAR(100),
             value INT
         );
         """
@@ -63,7 +63,7 @@ def insert_data(rows, conn):
     try:
         
         insert_query = """
-            INSERT INTO covid_vaccine_data (country, date, value)
+            INSERT INTO covid_vaccine_data (country_name, date, value)
             VALUES (%s, %s, %s)
         """
 
@@ -81,4 +81,3 @@ def insert_data(rows, conn):
         print("❌ Error while inserting:", e)
 
 
-fetch_and_store_data()
