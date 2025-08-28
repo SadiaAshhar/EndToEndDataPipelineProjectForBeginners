@@ -5,7 +5,7 @@ import logging
 
 url = "https://disease.sh/v3/covid-19/vaccine/coverage/countries?lastdays=1"
 
-def fetch_and_store_data():
+def covid_vaccine_data():
     
     try:
         #Step 1: Fetch COVID-19 data from the API
@@ -24,7 +24,8 @@ def fetch_and_store_data():
                 "date": date,
                 "value": value
             })
-                 
+
+        #Step 2: Connect of postgresDB    
         conn = psycopg2.connect(
             host="localhost",
             database="newDB",
@@ -32,14 +33,52 @@ def fetch_and_store_data():
             password="admin"
         )
                  
-        if conn:
-            print("✅ Connected to PostgreSQL successfully!")
-        else:
-            print("❌ Connection object is None. Something went wrong.")
+        cursor = conn.cursor()
+        
+        # Step 3: Using if not exists to create tble if it does not exist
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS covid_vaccine_data (
+            id SERIAL PRIMARY KEY,
+            country_name VARCHAR(100),
+            date DATE,
+            value INT
+        );
+        """
+        cursor.execute(create_table_query)
 
+        delete_existing_records = """
+        DELETE FROM covid_vaccine_data;        
+        """
+        cursor.execute(delete_existing_records)
+        insert_data(rows, conn)
+        
 
     except Exception as e:
         logging.error("Error occurred: %s", str(e))
         raise
+
+
+
+def insert_data(rows, conn):
+    try:
+        
+        insert_query = """
+            INSERT INTO covid_vaccine_data (country, date, value)
+            VALUES (%s, %s, %s)
+        """
+
+        values = [(row["country"], row["date"], row["value"]) for row in rows]
+        cursor = conn.cursor()
+
+        cursor.executemany(insert_query, values)
+        conn.commit()
+        print(f"✅ Inserted {cursor.rowcount} rows successfully.")
+
+        cursor.close()
+        conn.close()
+
+    except Exception as e:
+        print("❌ Error while inserting:", e)
+
 
 fetch_and_store_data()
